@@ -17,8 +17,8 @@ OF_ALLOW_DISABLE_NAVBAR := 0
 OF_CLOCK_POS := 1
 OF_OPTIONS_LIST_NUM := 9
 
-# Quick backup (Boot partition)
-OF_QUICK_BACKUP_LIST := /boot;
+# Quick backup (Boot + Samsung EFS — back up EFS before ANY wipe/flash)
+OF_QUICK_BACKUP_LIST := /boot;/efs;
 
 # Flashlight
 OF_FL_PATH1 := /sys/class/leds/torch-sec1/brightness

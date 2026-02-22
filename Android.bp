@@ -1,6 +1,11 @@
-// Copyright (C) 2023 The Android Open Source Project
+// Copyright (C) 2025-2026 OrangeFox Recovery Project
 // SPDX-License-Identifier: Apache-2.0
+//
+// Android.bp for:
+// Samsung Galaxy Tab A9 WiFi (SM-X110) - codename: gta9wifi
+// SoC: MediaTek Helio G99 (MT6789), non-A/B, eMMC storage
+//
+// No Qualcomm boot control or UFS utilities needed for this device.
 
 soong_namespace {
-    imports: ["hardware/qcom-caf/bootctrl"],
 }

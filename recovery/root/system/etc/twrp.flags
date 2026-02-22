@@ -27,6 +27,25 @@
 # Data / Metadata
 /metadata              ext4    /dev/block/by-name/metadata                                        flags=display="Metadata";backup=1
 
+# Cache (Samsung non-A/B devices have a dedicated cache partition)
+/cache                 ext4    /dev/block/by-name/cache                                           flags=display="Cache";backup=1;wipeduringfactoryreset
+
+# Samsung EFS — modem security/DRM keys. CRITICAL to back up before wiping.
+# NOTE: Verify the partition name; some Samsung variants use 'efs' or 'modemst1'/'modemst2'
+/efs                   ext4    /dev/block/by-name/efs                                             flags=display="EFS (Modem Keys)";backup=1
+
+# Samsung param partition (stores reboot reason, download mode state, etc.)
+/param                 emmc    /dev/block/by-name/param                                           flags=display="Param";backup=1
+
+# MediaTek NVRAM / Factory data — calibration and config data
+# NOTE: Verify these partition names on your SM-X110
+/nvdata                ext4    /dev/block/by-name/nvdata                                          flags=display="NVData";backup=1
+/nvram                 emmc    /dev/block/by-name/nvram                                           flags=display="NVRAM";backup=1
+
+# MediaTek protect partitions
+/protect_f             ext4    /dev/block/by-name/protect_f                                       flags=display="Protect-F";backup=1
+/protect_s             ext4    /dev/block/by-name/protect_s                                       flags=display="Protect-S";backup=1
+
 # Removable storage
 /sdcard2               auto    /dev/block/mmcblk1p1                       /dev/block/mmcblk1      flags=display="MicroSD";fsflags="utf8";storage;removable
 /usb_otg               auto    /dev/block/sdg1                            /dev/block/sdg          flags=display="USB-Storage";fsflags="utf8,sync";storage;formattable;removable
