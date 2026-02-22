@@ -1,0 +1,29 @@
+# Copyright (C) 2025-2026 OrangeFox Recovery Project
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# init.recovery.mtk.rc for:
+# Samsung Galaxy Tab A9 WiFi (SM-X110) - codename: gta9wifi
+# SoC: MediaTek Helio G99 (MT6789)
+
+import init.recovery.encryption.rc
+
+on early-init
+    loglevel 7
+    write /sys/fs/selinux/enforce 0
+
+on property:twrp.modules.loaded=true
+    mkdir /mnt/vendor 0775 shell system
+    mkdir /mnt/vendor/persist 0775 shell system
+    setprop twrp.firmware.mounted true
+
+on init
+    start boot-hal-1-2
+
+on fs
+    # eMMC read-ahead tuning for SM-X110 (MT6789 uses eMMC 5.1)
+    # NOTE: Verify the eMMC block device name (mmcblk0) on your device
+    write /sys/block/mmcblk0/queue/read_ahead_kb 2048
+    write /sys/block/mmcblk0/queue/nr_requests 256
+
+on boot
+    setprop sys.usb.config adb

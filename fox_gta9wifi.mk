@@ -1,24 +1,27 @@
 # Copyright (C) 2025-2026 OrangeFox Recovery Project
-# Copyright (C) 2026 chickendrop89
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# OrangeFox recovery settings for:
+# Samsung Galaxy Tab A9 WiFi (SM-X110) - codename: gta9wifi
+# SoC: MediaTek Helio G99 (MT6789)
 
 # OrangeFox maintainer
-OF_MAINTAINER := chickendrop89
+OF_MAINTAINER := averyv86
 
-# Screen settings
-OF_SCREEN_H := 2400
-OF_STATUS_H := 100
-OF_STATUS_INDENT_LEFT := 48
-OF_STATUS_INDENT_RIGHT := 48
+# Screen settings (8.7" TFT LCD, 800x1340)
+OF_SCREEN_H := 1340
+OF_STATUS_H := 72
+OF_STATUS_INDENT_LEFT := 40
+OF_STATUS_INDENT_RIGHT := 40
 OF_ALLOW_DISABLE_NAVBAR := 0
 OF_CLOCK_POS := 1
 OF_OPTIONS_LIST_NUM := 9
 
-# Quick backup (Boot, sensor data)
-OF_QUICK_BACKUP_LIST := /boot;/persist_image;
+# Quick backup (Boot partition)
+OF_QUICK_BACKUP_LIST := /boot;
 
-# Flashlight & LEDs
-OF_FL_PATH1	:= /tmp/of_torch
+# Flashlight
+OF_FL_PATH1 := /sys/class/leds/torch-sec1/brightness
 OF_USE_GREEN_LED := 0
 
 # Security (Disables MTP & ADB during password prompt)
@@ -28,8 +31,8 @@ OF_ADVANCED_SECURITY := 1
 OF_NO_TREBLE_COMPATIBILITY_CHECK := 1
 OF_DEFAULT_KEYMASTER_VERSION := 4.1
 
-# A/B partitioning
-OF_AB_DEVICE_WITH_RECOVERY_PARTITION := 1
+# Non-A/B device with dedicated recovery partition
+OF_AB_DEVICE_WITH_RECOVERY_PARTITION := 0
 OF_ENABLE_ALL_PARTITION_TOOLS := 1
 
 # Fix recovery issues caused by large splash images
@@ -52,3 +55,7 @@ OF_FORCE_DATA_FORMAT_F2FS := 1
 
 # Force casefolding to avoid /data issues
 OF_FORCE_CASEFOLDING := 1
+
+# Use device mapper paths for dynamic partitions
+FOX_RECOVERY_SYSTEM_PARTITION := "/dev/block/mapper/system"
+FOX_RECOVERY_VENDOR_PARTITION := "/dev/block/mapper/vendor"

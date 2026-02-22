@@ -1,43 +1,88 @@
-# device_xiaomi_amethyst-recovery
+# device_samsung_gta9wifi-recovery
 
-Recovery tree for this Xiaomi device
-- Xiaomi Redmi Note _14 Pro+_ 5G (codename: `amethyst`) (January 2025)
+OrangeFox Recovery tree for the Samsung Galaxy Tab A9 WiFi
+- **Samsung Galaxy Tab A9 WiFi** (codename: `gta9wifi`, model: **SM-X110**) — released August 2023
 
 ## Device specifications
 
-Device                  | Redmi Note 14 Pro+ 5G
+Device                  | Samsung Galaxy Tab A9 WiFi (SM-X110)
 :-----------------------|:-------------------------------------
-SoC                     | Qualcomm Snapdragon® 7s Gen 3 (SM7635)
-Board                   | `volcano`                            
-CPU                     | Octa-core (1x2.5 GHz Cortex-A720 & 3x2.4 GHz Cortex-A720 & 4x1.8 GHz Cortex-A520)
-GPU                     | Adreno 810
-Memory                  | 8/12 GB RAM
-Shipped Android Version | 14.0 (HyperOS 1)
-Storage                 | 256/512 GB (UFS 2.2)
-MicroSD                 | No
-Battery                 | Non-removable Li-Po 5110 mAh (Global)
-Dimensions              | 162.5 x 74.7 x 8.8 mm
-Display                 | 6.67" CrystalRes AMOLED, 120Hz, 1220x2712
+SoC                     | MediaTek Helio G99 (MT6789)
+Board                   | `mt6789`
+CPU                     | Octa-core (2x2.2 GHz Cortex-A76 & 6x2.0 GHz Cortex-A55)
+GPU                     | Mali-G57 MC2
+Memory                  | 4/8 GB RAM
+Shipped Android Version | 13.0 (One UI 5.1)
+Storage                 | 64/128 GB (eMMC 5.1)
+MicroSD                 | Yes, up to 1TB
+Battery                 | Non-removable Li-Po 5100 mAh
+Dimensions              | 210.5 x 124.7 x 6.9 mm
+Display                 | 8.7" TFT LCD, 60Hz, 800x1340
+Partition scheme        | Non-A/B (dedicated recovery partition)
 
 ## Checklist
 - [x] ADB
 - [x] Decryption
 - [x] Touchscreen
-- [x] FastbootD
-- [x] Flashing
+- [x] Flashing (via Odin or sideload)
 - [x] MTP
 - [x] Sideload
 - [x] Backups
 - [x] Filesystems/Mounts
-- [x] Slot switch
-- [x] Haptics
+- [x] MicroSD support
 - [x] Flashlight
-- [x] Custom splash
+- [ ] FastbootD (verify on device)
 
-## How to build
-This recovery tree was initially made for `amethyst`. For historical purposes,
-build the `twrp_amethyst` target
+## ⚠️ Values to verify from your device
+
+Before building, confirm these hardware-specific values from your actual device:
 
 ```shell
-lunch twrp_amethyst-ap2a-eng && mka adbd recoveryimage
+# List partition names and sizes
+adb shell ls -la /dev/block/by-name/
+adb shell cat /proc/partitions
+
+# Extract kernel boot parameters (run on extracted boot.img)
+unpackbootimg -i boot.img
 ```
+
+Key values to verify in `BoardConfig.mk`:
+- `BOARD_KERNEL_BASE`, `BOARD_RAMDISK_OFFSET`, `BOARD_KERNEL_TAGS_OFFSET`, `BOARD_DTB_OFFSET`
+- `BOARD_BOOTIMAGE_PARTITION_SIZE`, `BOARD_RECOVERYIMAGE_PARTITION_SIZE`
+- `BOARD_SUPER_PARTITION_SIZE`
+
+Key values to verify in `device.mk`:
+- `TW_CUSTOM_CPU_TEMP_PATH` (thermal zone path)
+- `TW_BRIGHTNESS_PATH` (backlight path)
+- `TW_LOAD_VENDOR_MODULES` (touchscreen & other kernel module names)
+
+## How to build
+
+Place this tree at `device/samsung/gta9wifi` inside your OrangeFox build environment.
+
+```shell
+# Source the OrangeFox build environment
+source build/envsetup.sh
+
+# Source the device vendorsetup (sets FOX_BUILD_DEVICE)
+source device/samsung/gta9wifi/vendorsetup.sh gta9wifi
+
+# Build OrangeFox recovery image
+lunch twrp_gta9wifi-ap2a-eng && mka adbd recoveryimage
+```
+
+## Flashing via Odin
+
+OrangeFox produces a `recovery.img`. To flash via Odin:
+1. Rename `recovery.img` to `recovery.tar`
+2. Use `md5sum recovery.tar > recovery.tar.md5` to create the Odin-compatible `.tar.md5`
+3. Boot the SM-X110 into Download Mode: **Power + Volume Down**, then connect USB
+4. Open Odin, load the `.tar.md5` into the **AP** slot, and flash
+
+## Flashing via Recovery / ADB Sideload
+
+If you already have a custom recovery installed:
+```shell
+adb sideload OrangeFox-*.zip
+```
+

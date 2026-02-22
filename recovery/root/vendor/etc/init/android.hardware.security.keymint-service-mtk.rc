@@ -1,0 +1,16 @@
+# Copyright (C) 2025-2026 OrangeFox Recovery Project
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# KeyMint service for Samsung Galaxy Tab A9 WiFi (SM-X110)
+# SoC: MediaTek Helio G99 (MT6789)
+#
+# NOTE: Verify the actual KeyMint binary name on your device:
+#   adb shell ls /vendor/bin/hw/ | grep -i keymint
+# Common MTK names: android.hardware.security.keymint-service-mtk
+#                   android.hardware.security.keymint-service (generic)
+
+service vendor.keymint-mtk /vendor/bin/hw/android.hardware.security.keymint-service-mtk
+    class early_hal
+    user nobody
+    group drmrpc
+    writepid /dev/cpuset/foreground/tasks

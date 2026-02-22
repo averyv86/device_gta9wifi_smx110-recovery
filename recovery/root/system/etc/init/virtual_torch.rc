@@ -1,5 +1,12 @@
-# Copyright (C) 2026 chickendrop89
+# Copyright (C) 2025-2026 OrangeFox Recovery Project
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# Samsung Galaxy Tab A9 WiFi (SM-X110) uses a single sysfs torch node
+# (/sys/class/leds/torch-sec1/brightness) that OrangeFox controls directly
+# via OF_FL_PATH1 — no virtual torch daemon is required.
+#
+# This service block is retained but disabled. Enable it only if the
+# direct-sysfs approach does not work on your kernel build.
 
 service virtual_torch /system/bin/virtual_torch.sh
     user root
@@ -7,7 +14,3 @@ service virtual_torch /system/bin/virtual_torch.sh
     priority 5
     disabled
     seclabel u:r:recovery:s0
-
-on property:twrp.modules.loaded=true
-    wait /sys/class/leds/led:switch_0
-    start virtual_torch
