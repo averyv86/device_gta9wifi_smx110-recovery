@@ -1,11 +1,11 @@
 # Copyright (C) 2025-2026 OrangeFox Recovery Project
-# Copyright (C) 2026 chickendrop89
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# device.mk for:
+# Samsung Galaxy Tab A9 WiFi (SM-X110) - codename: gta9wifi
+# SoC: MediaTek Helio G99 (MT6789)
 
-DEVICE_PATH := device/xiaomi/amethyst
-
-# Configure Virtual A/B
-$(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota/compression_with_xor.mk)
+DEVICE_PATH := device/samsung/gta9wifi
 
 # Enable updating of APEXes
 $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
@@ -17,139 +17,82 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/developer_gsi_keys.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
 # OTA device(s)
-TARGET_OTA_ASSERT_DEVICE := amethyst
-
-# Boot control, Kernel prebuilts
-PRODUCT_PACKAGES += \
-    android.hardware.boot@1.2-impl-qti.recovery \
-    vendor_kernel_prebuilts
+TARGET_OTA_ASSERT_DEVICE := gta9wifi|SM-X110
 
 # FastbootD support
 PRODUCT_PACKAGES += \
     android.hardware.fastboot@1.1-impl-mock \
     fastbootd
 
-# Update engine
+# Update engine (non-A/B: sideload only)
 PRODUCT_PACKAGES += \
-    update_engine \
-    update_engine_sideload \
-    update_verifier
+    update_engine_sideload
 
-PRODUCT_PACKAGES_DEBUG += \
-    update_engine_client
+# API levels — SM-X110 shipped with Android 13 (API 33)
+PRODUCT_SHIPPING_API_LEVEL  := 33
+PRODUCT_TARGET_VNDK_VERSION := 33
+BOARD_SHIPPING_API_LEVEL    := 33
+SHIPPING_API_LEVEL          := 33
 
-PRODUCT_PACKAGES += \
-    otapreopt_script \
-    checkpoint_gc
-
-# Symlink /vendor/firmware to /odm/firmware for haptics and touchfeature
-BOARD_ROOT_EXTRA_SYMLINKS += /vendor/firmware:/vendor/odm/firmware
-
-# Stop build system from stripping blobs
-PRODUCT_COPY_FILES += \
-    $(call find-copy-subdir-files,*,$(DEVICE_PATH)/recovery/root/vendor/odm) \
-    $(call find-copy-subdir-files,*,$(DEVICE_PATH)/recovery/root/vendor/firmware_mnt)
-
-# API
-PRODUCT_SHIPPING_API_LEVEL  := 34
-PRODUCT_TARGET_VNDK_VERSION := 34
-BOARD_SHIPPING_API_LEVEL := 34
-SHIPPING_API_LEVEL := 34
-
-# Display Size & Density
-TARGET_SCREEN_HEIGHT  := 2712
-TARGET_SCREEN_DENSITY := 480
-TARGET_SCREEN_WIDTH   := 1220
+# Display — 8.7" TFT LCD, 800x1340, ~180 dpi
+TARGET_SCREEN_WIDTH   := 800
+TARGET_SCREEN_HEIGHT  := 1340
+TARGET_SCREEN_DENSITY := 180
 
 # Dynamic partitions
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 PRODUCT_BUILD_SUPER_PARTITION  := false
 
-# No Micro SDCard
-PRODUCT_CHARACTERISTICS := nosdcard
-
-# Virtual A/B
-AB_OTA_UPDATER := true
-AB_OTA_PARTITIONS += \
-    boot \
-    dtbo \
-    init_boot \
-    odm \
-    product \
-    recovery \
-    system \
-    system_dlkm \
-    system_ext \
-    vbmeta \
-    vbmeta_system \
-    vendor \
-    vendor_boot \
-    vendor_dlkm
-
-AB_OTA_POSTINSTALL_CONFIG += \
-    RUN_POSTINSTALL_system=true \
-    POSTINSTALL_PATH_system=system/bin/otapreopt_script \
-    FILESYSTEM_TYPE_system=erofs \
-    POSTINSTALL_OPTIONAL_system=true
-
-AB_OTA_POSTINSTALL_CONFIG += \
-    RUN_POSTINSTALL_vendor=true \
-    POSTINSTALL_PATH_vendor=bin/checkpoint_gc \
-    FILESYSTEM_TYPE_vendor=erofs \
-    POSTINSTALL_OPTIONAL_vendor=true
-
-PRODUCT_EXTRA_RECOVERY_KEYS += \
-    vendor/recovery/security/miui
+# Tablet with microSD slot
+PRODUCT_CHARACTERISTICS := tablet
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
-	$(DEVICE_PATH) \
-	vendor/qcom/opensource/commonsys-intf/display
+    $(DEVICE_PATH)
 
-# TWRP - Specifics
+# TWRP — General
 TW_THEME                := portrait_hdpi
 TW_DEFAULT_LANGUAGE     := en
 TW_USE_TOOLBOX          := true
 TW_INCLUDE_NTFS_3G      := true
 TW_INCLUDE_RESETPROP    := true
 TW_INCLUDE_LIBRESETPROP := true
-TW_MAX_BRIGHTNESS       := 4095
+TW_MAX_BRIGHTNESS       := 255
+TW_DEFAULT_BRIGHTNESS   := 150
 TW_EXTRA_LANGUAGES      := true
-TW_DEFAULT_BRIGHTNESS   := 2047
 TW_EXCLUDE_APEX         := true
 TW_INCLUDE_FASTBOOTD    := true
 TWRP_INCLUDE_LOGCAT     := true
 TW_INCLUDE_PYTHON       := true
 TW_NO_SCREEN_BLANK      := true
-TW_FRAMERATE            := 120
+TW_FRAMERATE            := 60
 
-# Blacklist Goodix fingerprint. There's no reason to include this input in recovery
-TW_INPUT_BLACKLIST := "uinput-goodix"
+# Samsung uses Download Mode, not standard fastboot bootloader
+TW_NO_REBOOT_BOOTLOADER  := true
+TW_HAS_DOWNLOAD_MODE     := true
 
-TW_CUSTOM_CPU_TEMP_PATH := "/sys/class/thermal/thermal_zone2/temp"
-TW_BRIGHTNESS_PATH      := "/sys/class/backlight/panel0-backlight/brightness"
+# Hardware paths for SM-X110
+# NOTE: Verify these paths on your actual device
+TW_CUSTOM_CPU_TEMP_PATH := "/sys/class/thermal/thermal_zone1/temp"
+TW_BRIGHTNESS_PATH      := "/sys/class/backlight/panel/brightness"
 
-# Vendor modules required for the recovery to function properly
-TW_LOAD_VENDOR_MODULES  += "panel_event_notifier.ko xiaomi_touch.ko goodix_core.ko
-TW_LOAD_VENDOR_MODULES  += focaltech_touch.ko adsp_loader_dlkm.ko
-TW_LOAD_VENDOR_MODULES  += qti_battery_charger.ko camera.ko stm_st54se_gpio.ko"
+# Touchscreen & vendor modules for MediaTek Helio G99
+# NOTE: Update module names to match your actual kernel modules
+TW_LOAD_VENDOR_MODULES := "sec_touchscreen.ko mt6789-afe-pcm.ko"
 
-TW_EXCLUDE_DEFAULT_USB_INIT   := true
+TW_EXCLUDE_DEFAULT_USB_INIT          := true
 TW_USE_SERIALNO_PROPERTY_FOR_DEVICE_ID := true
 
-TW_SUPPORT_INPUT_AIDL_HAPTICS := true
-TW_SUPPORT_INPUT_AIDL_HAPTICS_FQNAME := "IVibrator/vibratorfeature"
-TW_SUPPORT_INPUT_AIDL_HAPTICS_FIX_OFF := true
+TW_SUPPORT_INPUT_AIDL_HAPTICS        := false
 
-# TWRP - Crypto
+# TWRP — Crypto (FBE on Android 13)
 TW_INCLUDE_CRYPTO               := true
 TW_INCLUDE_CRYPTO_FBE           := true
 TW_INCLUDE_FBE_METADATA_DECRYPT := true
-TW_INCLUDE_OMAPI                := true
-BOARD_USES_QCOM_FBE_DECRYPTION  := true
 
-PLATFORM_VERSION                := 99.87.36
-PLATFORM_VERSION_LAST_STABLE    := $(PLATFORM_VERSION)
+# Set a future security patch date so OrangeFox can decrypt any ROM
+PLATFORM_VERSION             := 99.87.36
+PLATFORM_VERSION_LAST_STABLE := $(PLATFORM_VERSION)
 
 PLATFORM_SECURITY_PATCH := 2127-12-31
 VENDOR_SECURITY_PATCH   := $(PLATFORM_SECURITY_PATCH)

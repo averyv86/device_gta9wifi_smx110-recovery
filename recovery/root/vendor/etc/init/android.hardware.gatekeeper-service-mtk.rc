@@ -1,0 +1,16 @@
+# Copyright (C) 2025-2026 OrangeFox Recovery Project
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Gatekeeper service for Samsung Galaxy Tab A9 WiFi (SM-X110)
+# SoC: MediaTek Helio G99 (MT6789)
+#
+# NOTE: Verify the actual Gatekeeper binary name on your device:
+#   adb shell ls /vendor/bin/hw/ | grep -i gatekeeper
+# Common MTK names: android.hardware.gatekeeper@1.0-service-mtk
+#                   android.hardware.gatekeeper-service (generic)
+
+service vendor.gatekeeper-mtk /vendor/bin/hw/android.hardware.gatekeeper@1.0-service-mtk
+    class hal
+    user nobody
+    group drmrpc
+    writepid /dev/cpuset/foreground/tasks

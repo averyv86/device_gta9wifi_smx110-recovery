@@ -1,10 +1,13 @@
 #!/bin/bash
 
 # Copyright (C) 2025-2026 OrangeFox Recovery Project
-# Copyright (C) 2026 chickendrop89
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# vendorsetup.sh for:
+# Samsung Galaxy Tab A9 WiFi (SM-X110) - codename: gta9wifi
+# SoC: MediaTek Helio G99 (MT6789)
 
-FDEVICE="amethyst"
+FDEVICE="gta9wifi"
 
 fox_get_target_device() {
     local chkdev=""
@@ -35,7 +38,7 @@ fi
 
 if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ];
   then
-    export TARGET_DEVICE_ALT="amethyst"
+    export TARGET_DEVICE_ALT="SM-X110"
 
     # Binaries & Tools
     export FOX_USE_BUSYBOX_BINARY=1
@@ -53,25 +56,20 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ];
     export FOX_DELETE_AROMAFM=1
     export FOX_DELETE_INITD_ADDON=1
 
-    # KernelSU-Next / SukiSu support
+    # KernelSU-Next / SukiSU support
     export FOX_ENABLE_KERNELSU_NEXT_SUPPORT=1
     export FOX_ENABLE_SUKISU_SUPPORT=1
 
-    # A/B partitioning
-    export FOX_VIRTUAL_AB_DEVICE=1
+    # Non-A/B device — no virtual A/B
+    export FOX_VIRTUAL_AB_DEVICE=0
+
+    # Dynamic partition paths (device mapper)
     export FOX_RECOVERY_SYSTEM_PARTITION="/dev/block/mapper/system"
     export FOX_RECOVERY_VENDOR_PARTITION="/dev/block/mapper/vendor"
 
-    # Store settings at /data/recovery instead of internal storage
-    # export FOX_USE_DATA_RECOVERY_FOR_SETTINGS=1
-
-    # Use latest "magiskboot" binaries as this is a relatively new device
+    # Use latest "magiskboot" binaries
     export FOX_USE_UPDATED_MAGISKBOOT=1
 
-    # Very interesting, drops the ramdisk image size by ~6MB
-    # While keeping the same boot times. Needs testing.
-    # export FOX_COMPRESS_EXECUTABLES=1
-  
     # CCACHE
     export USE_CCACHE=1
     export CCACHE_EXEC="/usr/bin/ccache"
@@ -86,7 +84,7 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ];
     fi
 
     export LC_ALL="C"
-    export BUILD_USERNAME=chickendrop89
+    export BUILD_USERNAME=averyv86
     export BUILD_HOSTNAME=github
 
     # Debugging

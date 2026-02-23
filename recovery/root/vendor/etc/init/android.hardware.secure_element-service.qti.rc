@@ -1,11 +1,18 @@
-# Copyright (C) 2025 The Android Open Source Project
-# Copyright (C) 2026 chickendrop89
+# Copyright (C) 2025-2026 OrangeFox Recovery Project
 # SPDX-License-Identifier: Apache-2.0
+#
+# Secure Element service placeholder for Samsung Galaxy Tab A9 WiFi (SM-X110)
+#
+# NOTE: SM-X110 is a WiFi-only tablet and likely does NOT have a hardware
+#       Secure Element (eSE). If your device has no eSE, this file can be
+#       removed. If it does, replace the binary path with the correct one
+#       from your Samsung vendor partition.
 
-service vendor.secure_element /vendor/bin/hw/android.hardware.secure_element-service.qti
+service vendor.secure_element /vendor/bin/hw/android.hardware.secure_element-service.samsung
     interface aidl android.hardware.secure_element.ISecureElement/eSE1
     user system
     group nfc root
     setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/system/lib64:/bin
     seclabel u:r:recovery:s0
     disabled
+    # Do not start automatically — enable only if eSE is present

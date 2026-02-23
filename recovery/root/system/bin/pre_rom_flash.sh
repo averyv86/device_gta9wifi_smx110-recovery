@@ -1,8 +1,10 @@
 #!/system/bin/sh
 
 # Copyright (C) 2024 The OrangeFox Recovery Project
-# Copyright (C) 2026 chickendrop89
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# pre_rom_flash.sh for:
+# Samsung Galaxy Tab A9 WiFi (SM-X110) - codename: gta9wifi
 
 LOGMSG() {
 	echo "I:$1" >> /tmp/recovery.log;
@@ -44,7 +46,8 @@ backup_fox() {
 		[ -n "$x" ] && return; # standard payload.bin - no need for a backup
 	fi
 
-	source="/dev/block/bootdevice/by-name/recovery";
+	# Samsung/MTK: recovery partition is at /dev/block/by-name/recovery (non-A/B)
+	source="/dev/block/by-name/recovery";
 	destination="/tmp/fox_backup.img";
 
 	if [ ! -f $destination ]; then

@@ -1,22 +1,17 @@
 #!/system/bin/sh
 
-# Copyright (C) 2026 chickendrop89
+# Copyright (C) 2025-2026 OrangeFox Recovery Project
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# runatboot.sh for:
+# Samsung Galaxy Tab A9 WiFi (SM-X110) - codename: gta9wifi
+# SoC: MediaTek Helio G99 (MT6789)
 
-# Load batterysecret, and touch drivers/services if they didn't load properly
-
+# Load touchscreen driver if it didn't load properly
 MODULES_DIR="/vendor/lib/modules"
-QCOM_BATTERY_DIR="/sys/class/qcom-battery"
 
-DRIVERS="panel_event_notifier xiaomi_touch goodix_core focaltech_touch"
-TOUCH_SVC_STATUS=$(getprop init.svc.touchfeature-service)
-
-( # For batterysecret (async)
-    while [ ! -d "$QCOM_BATTERY_DIR" ]; 
-        do sleep 1
-    done
-    setprop vendor.qcom_battery.initialized true
-) &
+# NOTE: Update DRIVERS to match the actual touchscreen module name for SM-X110
+DRIVERS="sec_touchscreen"
 
 for d in $DRIVERS;
     do
@@ -28,11 +23,5 @@ for d in $DRIVERS;
                 echo "Force inserted module: $d" >> /tmp/recovery.log
         fi
 done
-
-if [ "$TOUCH_SVC_STATUS" != "running" ]; 
-    then 
-        setprop ctl.start touchfeature-service
-        echo "Forced touchscreen service start" >> /tmp/recovery.log
-fi
 
 exit 0

@@ -2,14 +2,14 @@
   Copyright (C) 2025-2026 OrangeFox Recovery Project
   SPDX-License-Identifier: Apache-2.0
 
-  System VINTF manifest for:
+  KeyMint VINTF manifest for:
   Samsung Galaxy Tab A9 WiFi (SM-X110) - codename: gta9wifi
   SoC: MediaTek Helio G99 (MT6789)
 
-  This manifest declares the framework (system) HAL interfaces
-  used by OrangeFox/TWRP recovery.
+  NOTE: Verify the actual KeyMint version on your device:
+    adb shell lshal | grep keymint
 -->
-<manifest version="3.0" type="framework">
+<manifest version="1.0" type="device">
     <hal format="aidl">
         <name>android.hardware.security.keymint</name>
         <version>3</version>
@@ -18,5 +18,9 @@
     <hal format="aidl">
         <name>android.hardware.security.sharedsecret</name>
         <fqname>ISharedSecret/default</fqname>
+    </hal>
+    <hal format="aidl">
+        <name>android.hardware.security.secureclock</name>
+        <fqname>ISecureClock/default</fqname>
     </hal>
 </manifest>
