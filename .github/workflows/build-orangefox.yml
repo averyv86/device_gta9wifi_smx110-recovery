@@ -1,0 +1,174 @@
+name: Build OrangeFox Recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_config_path:
+        description: Path to the build config file in this repository
+        required: false
+        default: .github/orangefox-build.env
+        type: string
+      build_config_overrides:
+        description: Optional KEY=VALUE overrides (one per line)
+        required: false
+        default: ''
+        type: string
+      kernel_source:
+        description: Optional override for CI_KERNEL_SOURCE
+        required: false
+        default: ''
+        type: string
+      modules_source:
+        description: Optional override for CI_MODULES_SOURCE
+        required: false
+        default: ''
+        type: string
+      orangefox_manifest_url:
+        description: Optional override for CI_ORANGEFOX_MANIFEST_URL
+        required: false
+        default: ''
+        type: string
+      orangefox_manifest_branch:
+        description: Optional override for CI_ORANGEFOX_MANIFEST_BRANCH
+        required: false
+        default: ''
+        type: string
+      create_odin_package:
+        description: Optional override for CI_CREATE_ODIN_PACKAGE (true/false)
+        required: false
+        default: ''
+        type: string
+      sync_jobs:
+        description: Optional override for CI_ORANGEFOX_SYNC_JOBS
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Checkout device tree
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc bison build-essential ccache curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick \
+            lib32ncurses5-dev lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libssl-dev libxml2 libxml2-utils \
+            lz4 openjdk-11-jdk pngcrush rsync schedtool squashfs-tools tar unzip xsltproc zip zlib1g-dev zstd
+
+      - name: Install repo tool
+        run: |
+          mkdir -p "$HOME/bin"
+          curl --fail --location --silent --show-error https://storage.googleapis.com/git-repo-downloads/repo -o "$HOME/bin/repo"
+          chmod +x "$HOME/bin/repo"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Resolve build config
+        run: |
+          config_path="${{ github.event.inputs.build_config_path || '.github/orangefox-build.env' }}"
+          if [[ ! -f "$config_path" ]]; then
+            echo "Missing build config: $config_path" >&2
+            exit 1
+          fi
+
+          overrides_file="$RUNNER_TEMP/build-overrides.env"
+          : > "$overrides_file"
+          if [[ -n '${{ github.event.inputs.build_config_overrides }}' ]]; then
+            printf '%s\n' '${{ github.event.inputs.build_config_overrides }}' >> "$overrides_file"
+          fi
+          if [[ -n '${{ github.event.inputs.kernel_source }}' ]]; then
+            printf 'CI_KERNEL_SOURCE=%q\n' '${{ github.event.inputs.kernel_source }}' >> "$overrides_file"
+          fi
+          if [[ -n '${{ github.event.inputs.modules_source }}' ]]; then
+            printf 'CI_MODULES_SOURCE=%q\n' '${{ github.event.inputs.modules_source }}' >> "$overrides_file"
+          fi
+          if [[ -n '${{ github.event.inputs.orangefox_manifest_url }}' ]]; then
+            printf 'CI_ORANGEFOX_MANIFEST_URL=%q\n' '${{ github.event.inputs.orangefox_manifest_url }}' >> "$overrides_file"
+          fi
+          if [[ -n '${{ github.event.inputs.orangefox_manifest_branch }}' ]]; then
+            printf 'CI_ORANGEFOX_MANIFEST_BRANCH=%q\n' '${{ github.event.inputs.orangefox_manifest_branch }}' >> "$overrides_file"
+          fi
+          if [[ -n '${{ github.event.inputs.create_odin_package }}' ]]; then
+            printf 'CI_CREATE_ODIN_PACKAGE=%q\n' '${{ github.event.inputs.create_odin_package }}' >> "$overrides_file"
+          fi
+          if [[ -n '${{ github.event.inputs.sync_jobs }}' ]]; then
+            printf 'CI_ORANGEFOX_SYNC_JOBS=%q\n' '${{ github.event.inputs.sync_jobs }}' >> "$overrides_file"
+          fi
+
+          python3 scripts/ci/build_config.py validate \
+            --config "$config_path" \
+            --overrides "$overrides_file" \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --env-out "$RUNNER_TEMP/build.env" \
+            --github-env "$GITHUB_ENV" \
+            --summary-out "$RUNNER_TEMP/build-summary.md"
+          cat "$RUNNER_TEMP/build-summary.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: /mnt/ccache
+          key: ${{ runner.os }}-orangefox-ccache-${{ github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-orangefox-ccache-
+
+      - name: Sync OrangeFox sources
+        run: |
+          mkdir -p /mnt/ccache "$RUNNER_TEMP/orangefox"
+          cd "$RUNNER_TEMP/orangefox"
+          repo init -u "$CI_ORANGEFOX_MANIFEST_URL" -b "$CI_ORANGEFOX_MANIFEST_BRANCH"
+          repo sync --force-sync --no-clone-bundle --no-tags --current-branch -j"$CI_ORANGEFOX_SYNC_JOBS"
+
+      - name: Stage device tree
+        run: |
+          source "$RUNNER_TEMP/build.env"
+          target_dir="$RUNNER_TEMP/orangefox/$CI_DEVICE_TREE_PATH"
+          mkdir -p "$target_dir"
+          rsync -a --delete --exclude='.git' --exclude='.github/workflows' "$GITHUB_WORKSPACE/" "$target_dir/"
+          python3 "$GITHUB_WORKSPACE/scripts/ci/build_config.py" apply \
+            --config "$GITHUB_WORKSPACE/${{ github.event.inputs.build_config_path || '.github/orangefox-build.env' }}" \
+            --overrides "$RUNNER_TEMP/build-overrides.env" \
+            --repo-root "$target_dir"
+          "$GITHUB_WORKSPACE/scripts/ci/prepare_prebuilts.sh" "$RUNNER_TEMP/build.env" "$target_dir"
+
+      - name: Build recovery image
+        run: |
+          set -o pipefail
+          cd "$RUNNER_TEMP/orangefox"
+          source build/envsetup.sh
+          source "$CI_DEVICE_TREE_PATH/vendorsetup.sh" "$CI_DEVICE_CODENAME"
+          lunch "$CI_LUNCH_TARGET"
+          mka $CI_BUILD_TARGETS 2>&1 | tee "$RUNNER_TEMP/orangefox-build.log"
+
+      - name: Collect artifacts
+        run: |
+          source "$RUNNER_TEMP/build.env"
+          product_dir="$RUNNER_TEMP/orangefox/out/target/product/$CI_DEVICE_CODENAME"
+          artifacts_dir="$RUNNER_TEMP/artifacts"
+          mkdir -p "$artifacts_dir"
+
+          cp "$product_dir/recovery.img" "$artifacts_dir/recovery.img"
+          cp "$RUNNER_TEMP/orangefox-build.log" "$artifacts_dir/orangefox-build.log"
+          cp "$RUNNER_TEMP/build-summary.md" "$artifacts_dir/build-summary.md"
+
+          if [[ "$CI_CREATE_ODIN_PACKAGE" == "true" ]]; then
+            (
+              cd "$product_dir"
+              tar -cf "$artifacts_dir/recovery.tar" recovery.img
+              cp "$artifacts_dir/recovery.tar" "$artifacts_dir/recovery.tar.md5"
+              md5sum "$artifacts_dir/recovery.tar" | awk '{print $1}' | tr -d '\n' >> "$artifacts_dir/recovery.tar.md5"
+            )
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: orangefox-gta9wifi-${{ github.run_number }}
+          path: ${{ runner.temp }}/artifacts/
+          if-no-files-found: error

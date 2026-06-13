@@ -111,6 +111,68 @@ Key values to verify/update:
 | `device.mk` | `TW_LOAD_VENDOR_MODULES` | `find /vendor/lib/modules -name '*.ko'` |
 | `recovery/root/vendor/etc/init/*.rc` | Binary names | `ls /vendor/bin/hw/` |
 
+## GitHub Actions CI build
+
+This repository now includes `.github/workflows/build-orangefox.yml` for manual OrangeFox builds.
+
+### 1. Fill the single build config
+
+Edit `.github/orangefox-build.env` with the device-specific values you already collected:
+- kernel offsets and pagesize
+- partition sizes
+- thermal/backlight sysfs paths
+- module list
+- source locations for the kernel binary and vendor modules
+
+The workflow also accepts per-run overrides, but the config file is the main interface.
+
+### 2. Provide the required prebuilts
+
+The workflow can populate `prebuilt/kernel` and `prebuilt/vendor/lib/modules` from either:
+- a local file or directory path already present in the repository checkout, or
+- a direct HTTP(S) URL such as a mirrored release asset
+
+Expected config keys:
+- `CI_KERNEL_SOURCE`
+- `CI_MODULES_SOURCE`
+- `CI_VENDOR_MODULES_VERSION`
+
+If your modules source is a flat directory of `.ko` files, the workflow creates `prebuilt/vendor/lib/modules/<version>/` and writes `modules.load.recovery` from `CI_TW_LOAD_VENDOR_MODULES`.
+
+### 3. Run the workflow
+
+Open **Actions** → **Build OrangeFox Recovery** → **Run workflow**.
+
+Available workflow inputs:
+- `build_config_path`
+- `build_config_overrides`
+- `kernel_source`
+- `modules_source`
+- `orangefox_manifest_url`
+- `orangefox_manifest_branch`
+- `create_odin_package`
+- `sync_jobs`
+
+### 4. What the workflow does
+
+The workflow will:
+1. validate the config and guardrails
+2. sync the OrangeFox source tree
+3. copy this device tree into `device/samsung/gta9wifi`
+4. apply your config to `BoardConfig.mk` and `device.mk`
+5. prepare kernel and module prebuilts
+6. run `lunch twrp_gta9wifi-ap2a-eng && mka adbd recoveryimage`
+7. upload `recovery.img`, `orangefox-build.log`, `build-summary.md`, and optionally `recovery.tar` plus `recovery.tar.md5`
+
+### 5. Guardrails
+
+The workflow fails early if:
+- required config keys are missing
+- numeric or hex fields are malformed
+- `gta9wifi` / `SM-X110` / `board-info.txt` checks do not match this tree
+- the kernel or module sources cannot be resolved
+- no kernel image or `.ko` modules can be found in the supplied sources
+
 ## How to build
 
 Place this tree at `device/samsung/gta9wifi` inside your OrangeFox build environment.
