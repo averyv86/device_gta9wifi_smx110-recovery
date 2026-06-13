@@ -172,7 +172,7 @@ jobs:
             (
               cd "$product_dir"
               tar -cf "$artifacts_dir/recovery.tar" recovery.img
-              # Create the Odin package by appending the plain-text MD5 checksum to the tar payload copy.
+              # Create recovery.tar.md5 by concatenating the tar payload with its plain-text MD5 checksum.
               cat "$artifacts_dir/recovery.tar" <(md5sum "$artifacts_dir/recovery.tar" | awk '{print $1}') > "$artifacts_dir/recovery.tar.md5"
             )
           fi

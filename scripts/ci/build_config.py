@@ -40,6 +40,8 @@ REQUIRED_KEYS = (
     "CI_TW_LOAD_VENDOR_MODULES",
 )
 
+PLACEHOLDER_VALUES = {"REQUIRED"}
+
 HEX_KEYS = {
     "CI_BOARD_KERNEL_BASE",
     "CI_BOARD_RAMDISK_OFFSET",
@@ -120,7 +122,7 @@ def merge_config(config_path: pathlib.Path, overrides_path: pathlib.Path | None)
 
 
 def validate_config(values: Dict[str, str], repo_root: pathlib.Path) -> None:
-    missing = [key for key in REQUIRED_KEYS if not values.get(key, "").strip()]
+    missing = [key for key in REQUIRED_KEYS if not values.get(key, "").strip() or values[key].strip() in PLACEHOLDER_VALUES]
     if missing:
         raise ValueError("missing required config values: " + ", ".join(missing))
 
@@ -172,9 +174,9 @@ def validate_config(values: Dict[str, str], repo_root: pathlib.Path) -> None:
     if not product_makefile_path.is_file():
         raise FileNotFoundError(f"expected {product_makefile} in the device tree root for product validation")
     product_mk = product_makefile_path.read_text(encoding="utf-8")
-    if f"PRODUCT_MODEL  := {values['CI_DEVICE_MODEL']}" not in product_mk:
+    if not re.search(rf"^PRODUCT_MODEL\s*:=\s*{re.escape(values['CI_DEVICE_MODEL'])}$", product_mk, re.MULTILINE):
         raise ValueError(f"CI_DEVICE_MODEL does not match {product_makefile}")
-    if f"PRODUCT_DEVICE := {values['CI_DEVICE_CODENAME']}" not in product_mk:
+    if not re.search(rf"^PRODUCT_DEVICE\s*:=\s*{re.escape(values['CI_DEVICE_CODENAME'])}$", product_mk, re.MULTILINE):
         raise ValueError(f"CI_DEVICE_CODENAME does not match {product_makefile}")
 
 
