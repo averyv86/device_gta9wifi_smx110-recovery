@@ -1,5 +1,8 @@
 name: Build OrangeFox Recovery
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -70,6 +73,14 @@ jobs:
           echo "$HOME/bin" >> "$GITHUB_PATH"
 
       - name: Resolve build config
+        env:
+          INPUT_BUILD_CONFIG_OVERRIDES: ${{ github.event.inputs.build_config_overrides }}
+          INPUT_KERNEL_SOURCE: ${{ github.event.inputs.kernel_source }}
+          INPUT_MODULES_SOURCE: ${{ github.event.inputs.modules_source }}
+          INPUT_MANIFEST_URL: ${{ github.event.inputs.orangefox_manifest_url }}
+          INPUT_MANIFEST_BRANCH: ${{ github.event.inputs.orangefox_manifest_branch }}
+          INPUT_CREATE_ODIN_PACKAGE: ${{ github.event.inputs.create_odin_package }}
+          INPUT_SYNC_JOBS: ${{ github.event.inputs.sync_jobs }}
         run: |
           config_path="${{ github.event.inputs.build_config_path || '.github/orangefox-build.env' }}"
           if [[ ! -f "$config_path" ]]; then
@@ -79,26 +90,26 @@ jobs:
 
           overrides_file="$RUNNER_TEMP/build-overrides.env"
           : > "$overrides_file"
-          if [[ -n '${{ github.event.inputs.build_config_overrides }}' ]]; then
-            printf '%s\n' '${{ github.event.inputs.build_config_overrides }}' >> "$overrides_file"
+          if [[ -n "$INPUT_BUILD_CONFIG_OVERRIDES" ]]; then
+            printf '%s\n' "$INPUT_BUILD_CONFIG_OVERRIDES" >> "$overrides_file"
           fi
-          if [[ -n '${{ github.event.inputs.kernel_source }}' ]]; then
-            printf 'CI_KERNEL_SOURCE=%q\n' '${{ github.event.inputs.kernel_source }}' >> "$overrides_file"
+          if [[ -n "$INPUT_KERNEL_SOURCE" ]]; then
+            printf 'CI_KERNEL_SOURCE=%s\n' "$(printf '%q' "$INPUT_KERNEL_SOURCE")" >> "$overrides_file"
           fi
-          if [[ -n '${{ github.event.inputs.modules_source }}' ]]; then
-            printf 'CI_MODULES_SOURCE=%q\n' '${{ github.event.inputs.modules_source }}' >> "$overrides_file"
+          if [[ -n "$INPUT_MODULES_SOURCE" ]]; then
+            printf 'CI_MODULES_SOURCE=%s\n' "$(printf '%q' "$INPUT_MODULES_SOURCE")" >> "$overrides_file"
           fi
-          if [[ -n '${{ github.event.inputs.orangefox_manifest_url }}' ]]; then
-            printf 'CI_ORANGEFOX_MANIFEST_URL=%q\n' '${{ github.event.inputs.orangefox_manifest_url }}' >> "$overrides_file"
+          if [[ -n "$INPUT_MANIFEST_URL" ]]; then
+            printf 'CI_ORANGEFOX_MANIFEST_URL=%s\n' "$(printf '%q' "$INPUT_MANIFEST_URL")" >> "$overrides_file"
           fi
-          if [[ -n '${{ github.event.inputs.orangefox_manifest_branch }}' ]]; then
-            printf 'CI_ORANGEFOX_MANIFEST_BRANCH=%q\n' '${{ github.event.inputs.orangefox_manifest_branch }}' >> "$overrides_file"
+          if [[ -n "$INPUT_MANIFEST_BRANCH" ]]; then
+            printf 'CI_ORANGEFOX_MANIFEST_BRANCH=%s\n' "$(printf '%q' "$INPUT_MANIFEST_BRANCH")" >> "$overrides_file"
           fi
-          if [[ -n '${{ github.event.inputs.create_odin_package }}' ]]; then
-            printf 'CI_CREATE_ODIN_PACKAGE=%q\n' '${{ github.event.inputs.create_odin_package }}' >> "$overrides_file"
+          if [[ -n "$INPUT_CREATE_ODIN_PACKAGE" ]]; then
+            printf 'CI_CREATE_ODIN_PACKAGE=%s\n' "$(printf '%q' "$INPUT_CREATE_ODIN_PACKAGE")" >> "$overrides_file"
           fi
-          if [[ -n '${{ github.event.inputs.sync_jobs }}' ]]; then
-            printf 'CI_ORANGEFOX_SYNC_JOBS=%q\n' '${{ github.event.inputs.sync_jobs }}' >> "$overrides_file"
+          if [[ -n "$INPUT_SYNC_JOBS" ]]; then
+            printf 'CI_ORANGEFOX_SYNC_JOBS=%s\n' "$(printf '%q' "$INPUT_SYNC_JOBS")" >> "$overrides_file"
           fi
 
           python3 scripts/ci/build_config.py validate \
@@ -161,8 +172,7 @@ jobs:
             (
               cd "$product_dir"
               tar -cf "$artifacts_dir/recovery.tar" recovery.img
-              cp "$artifacts_dir/recovery.tar" "$artifacts_dir/recovery.tar.md5"
-              md5sum "$artifacts_dir/recovery.tar" | awk '{print $1}' | tr -d '\n' >> "$artifacts_dir/recovery.tar.md5"
+              cat "$artifacts_dir/recovery.tar" <(md5sum "$artifacts_dir/recovery.tar" | awk '{print $1}') > "$artifacts_dir/recovery.tar.md5"
             )
           fi
 

@@ -128,7 +128,8 @@ prepare_modules() {
     fi
 
     if [[ ! -f "$version_dir/modules.load.recovery" ]]; then
-        printf '%s\n' $CI_TW_LOAD_VENDOR_MODULES > "$version_dir/modules.load.recovery"
+        read -r -a module_list <<< "$CI_TW_LOAD_VENDOR_MODULES"
+        printf '%s\n' "${module_list[@]}" > "$version_dir/modules.load.recovery"
     fi
 
     if command -v depmod >/dev/null 2>&1 && [[ ! -f "$version_dir/modules.dep" ]]; then

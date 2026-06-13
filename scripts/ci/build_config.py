@@ -6,9 +6,7 @@ import pathlib
 import re
 import shlex
 import sys
-from typing import Dict, Iterable, Tuple
-
-ROOT = pathlib.Path(__file__).resolve().parents[2]
+from typing import Dict, Iterable
 
 REQUIRED_KEYS = (
     "CI_ORANGEFOX_MANIFEST_URL",
@@ -163,7 +161,8 @@ def validate_config(values: Dict[str, str], repo_root: pathlib.Path) -> None:
     if f"require board={expected_board}" not in board_info:
         raise ValueError("CI_BOARD_REQUIREMENT does not match board-info.txt")
 
-    product_mk = (repo_root / "twrp_gta9wifi.mk").read_text(encoding="utf-8")
+    product_makefile = f"{values['CI_LUNCH_TARGET'].split('-', 1)[0]}.mk"
+    product_mk = (repo_root / product_makefile).read_text(encoding="utf-8")
     if f"PRODUCT_MODEL  := {values['CI_DEVICE_MODEL']}" not in product_mk:
         raise ValueError("CI_DEVICE_MODEL does not match twrp_gta9wifi.mk")
     if f"PRODUCT_DEVICE := {values['CI_DEVICE_CODENAME']}" not in product_mk:
@@ -264,6 +263,6 @@ def main(argv: Iterable[str]) -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main(sys.argv[1:]))
-    except Exception as exc:  # noqa: BLE001
+    except (FileNotFoundError, OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         raise SystemExit(1)
