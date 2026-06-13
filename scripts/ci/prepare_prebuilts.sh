@@ -26,6 +26,7 @@ fetch_source() {
     if [[ "$source" =~ ^https?:// ]]; then
         file_name=${source##*/}
         [[ -n "$file_name" ]] || file_name=$fallback_name
+        echo "Fetching $source"
         curl --fail --location --retry 3 --silent --show-error "$source" -o "$destination_dir/$file_name"
         printf '%s\n' "$destination_dir/$file_name"
     else
@@ -76,13 +77,14 @@ extract_if_needed() {
 }
 
 prepare_kernel() {
-    local fetched kernel_path
+    local fetched fetched_name kernel_path
     fetched=$(fetch_source "$CI_KERNEL_SOURCE" "$TMP_DIR/kernel-download" kernel.bin)
+    fetched_name=$(basename "$fetched")
     extract_if_needed "$fetched" "$KERNEL_TMP"
 
     kernel_path=$(find "$KERNEL_TMP" -type f \( -name kernel -o -name 'Image*' \) | head -n 1 || true)
     if [[ -z "$kernel_path" ]]; then
-        kernel_path=$(find "$KERNEL_TMP" -type f | head -n 1 || true)
+        kernel_path=$(find "$KERNEL_TMP" -maxdepth 1 -type f -name "$fetched_name" | head -n 1 || true)
     fi
     if [[ -z "$kernel_path" ]]; then
         echo "Unable to locate a kernel binary from $CI_KERNEL_SOURCE" >&2

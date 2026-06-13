@@ -94,7 +94,10 @@ def parse_env_lines(lines: Iterable[str], source: str) -> Dict[str, str]:
         key = key.strip()
         if not re.fullmatch(r"[A-Z0-9_]+", key):
             raise ValueError(f"{source}:{index}: invalid key {key!r}")
-        value = shlex.split(raw_value, posix=True)
+        try:
+            value = shlex.split(raw_value, posix=True)
+        except ValueError as exc:
+            raise ValueError(f"{source}:{index}: invalid shell quoting in value") from exc
         if len(value) > 1:
             parsed = " ".join(value)
         elif len(value) == 1:
@@ -123,7 +126,7 @@ def validate_config(values: Dict[str, str], repo_root: pathlib.Path) -> None:
 
     for key in HEX_KEYS:
         if not re.fullmatch(r"0x[0-9A-Fa-f]+", values[key]):
-            raise ValueError(f"{key} must be a hex value like 0x1234")
+            raise ValueError(f"{key} must be a hex value like 0x1234, got {values[key]!r}")
 
     for key in INT_KEYS:
         if not re.fullmatch(r"[0-9]+", values[key]):
@@ -156,13 +159,19 @@ def validate_config(values: Dict[str, str], repo_root: pathlib.Path) -> None:
     if not values["CI_ORANGEFOX_MANIFEST_URL"].startswith(("http://", "https://")):
         raise ValueError("CI_ORANGEFOX_MANIFEST_URL must be an HTTP(S) URL")
 
-    board_info = (repo_root / "board-info.txt").read_text(encoding="utf-8")
+    board_info_path = repo_root / "board-info.txt"
+    if not board_info_path.is_file():
+        raise FileNotFoundError(f"expected {board_info_path.name} in the device tree root for board validation")
+    board_info = board_info_path.read_text(encoding="utf-8")
     expected_board = values["CI_BOARD_REQUIREMENT"]
     if f"require board={expected_board}" not in board_info:
-        raise ValueError("CI_BOARD_REQUIREMENT does not match board-info.txt")
+        raise ValueError(f"CI_BOARD_REQUIREMENT does not match {board_info_path.name}")
 
     product_makefile = f"{values['CI_LUNCH_TARGET'].split('-', 1)[0]}.mk"
-    product_mk = (repo_root / product_makefile).read_text(encoding="utf-8")
+    product_makefile_path = repo_root / product_makefile
+    if not product_makefile_path.is_file():
+        raise FileNotFoundError(f"expected {product_makefile} in the device tree root for product validation")
+    product_mk = product_makefile_path.read_text(encoding="utf-8")
     if f"PRODUCT_MODEL  := {values['CI_DEVICE_MODEL']}" not in product_mk:
         raise ValueError(f"CI_DEVICE_MODEL does not match {product_makefile}")
     if f"PRODUCT_DEVICE := {values['CI_DEVICE_CODENAME']}" not in product_mk:
@@ -206,12 +215,12 @@ def write_summary(values: Dict[str, str], output_path: pathlib.Path) -> None:
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def replace_assignment(text: str, key: str, value: str, quoted: bool = False) -> str:
+def replace_assignment(text: str, key: str, value: str, file_path: pathlib.Path, quoted: bool = False) -> str:
     replacement = f'{key} := "{value}"' if quoted else f"{key} := {value}"
     pattern = re.compile(rf"^(\s*{re.escape(key)}\s*:?=)\s*.*$", re.MULTILINE)
     new_text, count = pattern.subn(replacement, text, count=1)
     if count != 1:
-        raise ValueError(f"failed to update {key}")
+        raise ValueError(f"failed to update {key} in {file_path}")
     return new_text
 
 
@@ -224,6 +233,7 @@ def apply_updates(values: Dict[str, str], repo_root: pathlib.Path) -> None:
                 text,
                 make_key,
                 values[config_key],
+                file_path,
                 quoted=make_key in {"TW_CUSTOM_CPU_TEMP_PATH", "TW_BRIGHTNESS_PATH", "TW_LOAD_VENDOR_MODULES"},
             )
         file_path.write_text(text, encoding="utf-8")

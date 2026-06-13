@@ -94,22 +94,22 @@ jobs:
             printf '%s\n' "$INPUT_BUILD_CONFIG_OVERRIDES" >> "$overrides_file"
           fi
           if [[ -n "$INPUT_KERNEL_SOURCE" ]]; then
-            printf 'CI_KERNEL_SOURCE=%s\n' "$(printf '%q' "$INPUT_KERNEL_SOURCE")" >> "$overrides_file"
+            printf 'CI_KERNEL_SOURCE=%s\n' "$INPUT_KERNEL_SOURCE" >> "$overrides_file"
           fi
           if [[ -n "$INPUT_MODULES_SOURCE" ]]; then
-            printf 'CI_MODULES_SOURCE=%s\n' "$(printf '%q' "$INPUT_MODULES_SOURCE")" >> "$overrides_file"
+            printf 'CI_MODULES_SOURCE=%s\n' "$INPUT_MODULES_SOURCE" >> "$overrides_file"
           fi
           if [[ -n "$INPUT_MANIFEST_URL" ]]; then
-            printf 'CI_ORANGEFOX_MANIFEST_URL=%s\n' "$(printf '%q' "$INPUT_MANIFEST_URL")" >> "$overrides_file"
+            printf 'CI_ORANGEFOX_MANIFEST_URL=%s\n' "$INPUT_MANIFEST_URL" >> "$overrides_file"
           fi
           if [[ -n "$INPUT_MANIFEST_BRANCH" ]]; then
-            printf 'CI_ORANGEFOX_MANIFEST_BRANCH=%s\n' "$(printf '%q' "$INPUT_MANIFEST_BRANCH")" >> "$overrides_file"
+            printf 'CI_ORANGEFOX_MANIFEST_BRANCH=%s\n' "$INPUT_MANIFEST_BRANCH" >> "$overrides_file"
           fi
           if [[ -n "$INPUT_CREATE_ODIN_PACKAGE" ]]; then
-            printf 'CI_CREATE_ODIN_PACKAGE=%s\n' "$(printf '%q' "$INPUT_CREATE_ODIN_PACKAGE")" >> "$overrides_file"
+            printf 'CI_CREATE_ODIN_PACKAGE=%s\n' "$INPUT_CREATE_ODIN_PACKAGE" >> "$overrides_file"
           fi
           if [[ -n "$INPUT_SYNC_JOBS" ]]; then
-            printf 'CI_ORANGEFOX_SYNC_JOBS=%s\n' "$(printf '%q' "$INPUT_SYNC_JOBS")" >> "$overrides_file"
+            printf 'CI_ORANGEFOX_SYNC_JOBS=%s\n' "$INPUT_SYNC_JOBS" >> "$overrides_file"
           fi
 
           python3 scripts/ci/build_config.py validate \
@@ -172,7 +172,7 @@ jobs:
             (
               cd "$product_dir"
               tar -cf "$artifacts_dir/recovery.tar" recovery.img
-              # Odin expects the tar payload with the MD5 text checksum appended.
+              # Create the Odin package by appending the plain-text MD5 checksum to the tar payload copy.
               cat "$artifacts_dir/recovery.tar" <(md5sum "$artifacts_dir/recovery.tar" | awk '{print $1}') > "$artifacts_dir/recovery.tar.md5"
             )
           fi

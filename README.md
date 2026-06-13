@@ -159,7 +159,7 @@ The workflow will:
 1. validate the config and guardrails
 2. sync the OrangeFox source tree
 3. copy this device tree into `device/samsung/gta9wifi`
-4. apply your config to `BoardConfig.mk` and `device.mk`
+4. Apply your config to `BoardConfig.mk` and `device.mk`
 5. prepare kernel and module prebuilts
 6. run `lunch twrp_gta9wifi-ap2a-eng && mka adbd recoveryimage`
 7. upload `recovery.img`, `orangefox-build.log`, `build-summary.md`, and optionally `recovery.tar` plus `recovery.tar.md5`
@@ -208,4 +208,3 @@ adb sideload OrangeFox-*.zip
 The `/efs` partition contains your modem security keys. Losing it may permanently
 break cellular functionality (not relevant for WiFi tablet, but the partition
 still contains DRM/calibration data). OrangeFox will include it in the Quick Backup.
-
