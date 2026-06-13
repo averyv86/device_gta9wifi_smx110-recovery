@@ -18,13 +18,14 @@ mkdir -p "$KERNEL_TMP" "$MODULES_TMP" "$PREBUILT_DIR/vendor/lib/modules"
 fetch_source() {
     local source=$1
     local destination_dir=$2
+    local fallback_name=${3:-download.bin}
     local resolved file_name
 
     mkdir -p "$destination_dir"
 
     if [[ "$source" =~ ^https?:// ]]; then
         file_name=${source##*/}
-        [[ -n "$file_name" ]] || file_name=download.bin
+        [[ -n "$file_name" ]] || file_name=$fallback_name
         curl --fail --location --retry 3 --silent --show-error "$source" -o "$destination_dir/$file_name"
         printf '%s\n' "$destination_dir/$file_name"
     else
@@ -76,7 +77,7 @@ extract_if_needed() {
 
 prepare_kernel() {
     local fetched kernel_path
-    fetched=$(fetch_source "$CI_KERNEL_SOURCE" "$TMP_DIR/kernel-download")
+    fetched=$(fetch_source "$CI_KERNEL_SOURCE" "$TMP_DIR/kernel-download" kernel.bin)
     extract_if_needed "$fetched" "$KERNEL_TMP"
 
     kernel_path=$(find "$KERNEL_TMP" -type f \( -name kernel -o -name 'Image*' \) | head -n 1 || true)
@@ -93,7 +94,7 @@ prepare_kernel() {
 
 prepare_modules() {
     local fetched
-    fetched=$(fetch_source "$CI_MODULES_SOURCE" "$TMP_DIR/modules-download")
+    fetched=$(fetch_source "$CI_MODULES_SOURCE" "$TMP_DIR/modules-download" modules.bin)
     extract_if_needed "$fetched" "$MODULES_TMP"
 
     local modules_root version_dir

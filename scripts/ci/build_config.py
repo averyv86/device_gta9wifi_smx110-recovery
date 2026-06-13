@@ -164,9 +164,9 @@ def validate_config(values: Dict[str, str], repo_root: pathlib.Path) -> None:
     product_makefile = f"{values['CI_LUNCH_TARGET'].split('-', 1)[0]}.mk"
     product_mk = (repo_root / product_makefile).read_text(encoding="utf-8")
     if f"PRODUCT_MODEL  := {values['CI_DEVICE_MODEL']}" not in product_mk:
-        raise ValueError("CI_DEVICE_MODEL does not match twrp_gta9wifi.mk")
+        raise ValueError(f"CI_DEVICE_MODEL does not match {product_makefile}")
     if f"PRODUCT_DEVICE := {values['CI_DEVICE_CODENAME']}" not in product_mk:
-        raise ValueError("CI_DEVICE_CODENAME does not match twrp_gta9wifi.mk")
+        raise ValueError(f"CI_DEVICE_CODENAME does not match {product_makefile}")
 
 
 def write_shell_env(values: Dict[str, str], output_path: pathlib.Path) -> None:

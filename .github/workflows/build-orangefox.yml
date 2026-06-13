@@ -172,6 +172,7 @@ jobs:
             (
               cd "$product_dir"
               tar -cf "$artifacts_dir/recovery.tar" recovery.img
+              # Odin expects the tar payload with the MD5 text checksum appended.
               cat "$artifacts_dir/recovery.tar" <(md5sum "$artifacts_dir/recovery.tar" | awk '{print $1}') > "$artifacts_dir/recovery.tar.md5"
             )
           fi
